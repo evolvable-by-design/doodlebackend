@@ -11,6 +11,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OrderBy;
 
@@ -39,13 +40,16 @@ public class Poll {
     private Date updatedAt;
 
     @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "pollID")
     @OrderBy("startDate ASC")
     List<Choice> pollChoices;
 
     @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "pollID")
     List<Comment> pollComments = new ArrayList<>();
 
     @OneToMany(cascade = CascadeType.ALL)
+    @JoinColumn(name = "pollID")
     List<MealPreference> pollMealPreferences = new ArrayList<>();
 
     private String padURL;

@@ -1,12 +1,17 @@
 package fr.istic.tlc.domain;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import org.hibernate.annotations.CreationTimestamp;
-
-import javax.persistence.*;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
+
+import javax.persistence.CascadeType;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.ManyToMany;
+import javax.persistence.OneToMany;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 public class User {
@@ -16,14 +21,13 @@ public class User {
     private Long id;
 
     private String username;
+    private String mail;
 
-    @JsonIgnore
+
+	@JsonIgnore
     @ManyToMany(mappedBy = "users")
     List<Choice> userChoices = new ArrayList<>();
 
-    @JsonIgnore
-    @OneToMany(mappedBy="user", cascade = CascadeType.ALL)
-    List<Comment> userComments = new ArrayList<>();
 
     @JsonIgnore
     @OneToMany(mappedBy="user", cascade = CascadeType.ALL)
@@ -38,14 +42,19 @@ public class User {
     public void addChoice(Choice choice){
         this.userChoices.add(choice);
     }
+    public String getMail() {
+		return mail;
+	}
+
+	public void setMail(String mail) {
+		this.mail = mail;
+	}
+
 
     public void removeChoice(Choice choice){
         this.userChoices.remove(choice);
     }
 
-    public void addComment (Comment comment) {this.userComments.add(comment);}
-
-    public void removeComment (Comment comment) {this.userComments.remove(comment);}
 
     public void addMealPreference (MealPreference mealPreference) {this.userMealPreferences.add(mealPreference);}
 
@@ -81,14 +90,6 @@ public class User {
 
     public void setUserChoices(List<Choice> userChoices) {
         this.userChoices = userChoices;
-    }
-
-    public List<Comment> getUserComments() {
-        return userComments;
-    }
-
-    public void setUserComments(List<Comment> userComments) {
-        this.userComments = userComments;
     }
 
     @Override

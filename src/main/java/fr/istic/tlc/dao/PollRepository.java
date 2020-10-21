@@ -11,4 +11,7 @@ public class PollRepository implements PanacheRepository<Poll> {
 	public Poll findBySlug(String slug){
 		return find("slug", slug).firstResult();	
 	}
+	public Poll findByAdminSlug(String slug){
+		return find("slugAdmin", slug).firstResult();	
+	}
 }

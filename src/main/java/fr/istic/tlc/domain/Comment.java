@@ -9,9 +9,7 @@ public class Comment {
     private Long id;
 
     private String content;
-
-    @ManyToOne
-    User user;
+    private String auteur;
 
     public Comment(){}
 
@@ -35,20 +33,20 @@ public class Comment {
         this.content = content;
     }
 
-    public User getUser() {
-        return user;
-    }
+    public String getAuteur() {
+		return auteur;
+	}
 
-    public void setUser(User user) {
-        this.user = user;
-    }
+	public void setAuteur(String auteur) {
+		this.auteur = auteur;
+	}
+
 
     @Override
     public String toString() {
         return "Comment{" +
                 "id=" + id +
                 ", content='" + content + '\'' +
-                ", user=" + user +
                 '}';
     }
 }
