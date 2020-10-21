@@ -32,8 +32,10 @@ public class Poll {
     private String slug = generateSlug(24);
     private String slugAdmin = generateSlug(24);
     private String tlkURL = "https://tlk.io/"+generateSlug(12);
+    public boolean clos = false;
+    
 
-    @CreationTimestamp
+	@CreationTimestamp
     private Date createdAt;
 
     @UpdateTimestamp
@@ -180,9 +182,19 @@ public class Poll {
         return this.padURL;
     }
 
+    
     public void setPadURL(String padURL) {
         this.padURL=padURL;
     }
+    
+    public boolean isClos() {
+		return clos;
+	}
+
+	public void setClos(boolean clos) {
+		this.clos = clos;
+	}
+
 
     @Override
     public String toString() {
