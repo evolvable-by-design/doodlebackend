@@ -13,6 +13,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.OrderBy;
 
 import org.hibernate.annotations.CreationTimestamp;
@@ -45,6 +46,10 @@ public class Poll {
     @JoinColumn(name = "pollID")
     @OrderBy("startDate ASC")
     List<Choice> pollChoices;
+
+    
+    @OneToOne
+    Choice selectedChoice;
 
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "pollID")
@@ -178,7 +183,15 @@ public class Poll {
         this.pollChoices = pollChoices;
     }
 
-    public String getPadURL() {
+    public Choice getSelectedChoice() {
+		return selectedChoice;
+	}
+
+	public void setSelectedChoice(Choice selectedChoice) {
+		this.selectedChoice = selectedChoice;
+	}
+
+	public String getPadURL() {
         return this.padURL;
     }
 

@@ -1,5 +1,7 @@
 package fr.istic.tlc.resources;
 
+import java.util.List;
+
 import javax.inject.Inject;
 import javax.transaction.Transactional;
 import javax.ws.rs.Consumes;
@@ -47,8 +49,9 @@ public class PollResourceEx {
     @Produces(MediaType.APPLICATION_JSON)
 	public Poll getPollBySlug(@PathParam("slug")  String slug) {
 		Poll p =  pollRep.findBySlug(slug);
-		p.getPollComments().clear();
-		p.getPollChoices().forEach(c -> c.getUsers().clear());
+		if (p!= null)
+			p.getPollComments().clear();
+//		p.getPollChoices().forEach(c -> c.getUsers().clear());
 		return p;
 	}
 
@@ -77,7 +80,7 @@ public class PollResourceEx {
 	@POST
     @Consumes(MediaType.APPLICATION_JSON)
 	@Transactional
-	public void addChoiceUser(ChoiceUser userChoice) {
+	public User addChoiceUser(ChoiceUser userChoice)  {
 		User u = this.userRep.find("mail", userChoice.getMail()).firstResult();
 		if (u == null) {
 			u = new User();
@@ -97,7 +100,36 @@ public class PollResourceEx {
 			c.addUser(u);
 			this.choiceRep.persistAndFlush(c);
 		}
+		return u;
 	}
 
+	@Path("/selectedchoice/{choiceid}")
+	@POST
+    @Consumes(MediaType.APPLICATION_JSON)
+	@Transactional
+	public void closePoll(@PathParam("choiceid")  String choiceid) {
+		Choice c =  choiceRep.findById(Long.parseLong(choiceid));
+		Poll p = this.pollRep.find("select p from Poll as p join p.pollChoices as c where c.id= ?1", c.getId()).firstResult();
+		p.setClos(true);
+		p.setSelectedChoice(c);
+		this.pollRep.persist(p);
+		// TODO Send Email
+		
+	}
+	
+    
+    @GET()
+    @Path("polls/{slug}/comments")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<Comment> getAllCommentsFromPoll(@PathParam("slug") String slug) {
+        // On vérifie que le poll existe
+        Poll p = this.pollRep.findBySlug(slug);
+       return p.getPollComments();
+    }
+
+
+	
+	
+	
 	
 }
