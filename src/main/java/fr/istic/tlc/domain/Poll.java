@@ -48,14 +48,14 @@ public class Poll {
     List<Choice> pollChoices;
 
     
-    @OneToOne
+    @OneToOne(cascade = {CascadeType.PERSIST,CascadeType.REMOVE,CascadeType.REFRESH})
     Choice selectedChoice;
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade =  {CascadeType.PERSIST,CascadeType.REMOVE,CascadeType.REFRESH})
     @JoinColumn(name = "pollID")
     List<Comment> pollComments = new ArrayList<>();
 
-    @OneToMany(cascade = CascadeType.ALL)
+    @OneToMany(cascade =  {CascadeType.PERSIST,CascadeType.REMOVE,CascadeType.REFRESH})
     @JoinColumn(name = "pollID")
     List<MealPreference> pollMealPreferences = new ArrayList<>();
 
