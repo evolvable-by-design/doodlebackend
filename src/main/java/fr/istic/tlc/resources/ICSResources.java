@@ -35,6 +35,9 @@ import net.fortuna.ical4j.data.ParserException;
 import net.fortuna.ical4j.model.Calendar;
 import net.fortuna.ical4j.model.Component;
 import net.fortuna.ical4j.model.ComponentList;
+import net.fortuna.ical4j.model.DateTime;
+import net.fortuna.ical4j.model.Period;
+import net.fortuna.ical4j.model.PeriodList;
 import net.fortuna.ical4j.model.component.CalendarComponent;
 import net.fortuna.ical4j.model.component.VEvent;
 import net.fortuna.ical4j.util.MapTimeZoneCache;
@@ -73,17 +76,16 @@ public class ICSResources {
 				minDate = p.getPollChoices().get(0).getstartDate();
 
 			// Get user to get its ICS
-			//User u = this.userRep.find("mail", usermail).firstResult();
+			// User u = this.userRep.find("mail", usermail).firstResult();
 			byte[] decodedBytes = Base64.getDecoder().decode(ics);
 			String decodedString = new String(decodedBytes);
-			
-			
+
 			if (decodedString != null && !"".equals(decodedString)) {
 				// String s =
 				// "http://zimbra.inria.fr/home/olivier.barais@irisa.fr/Calendar.ics";
 
 				// Query the ics url
-				
+
 				System.setProperty("net.fortuna.ical4j.timezone.cache.impl", MapTimeZoneCache.class.getName());
 				CloseableHttpAsyncClient client = HttpAsyncClients.createDefault();
 				client.start();
@@ -105,26 +107,36 @@ public class ICSResources {
 				ComponentList<CalendarComponent> events = calendar.getComponents(Component.VEVENT);
 				List<Choice> choices = p.getPollChoices();
 				// Create Event to draw
+				java.util.Calendar calEnd = java.util.Calendar.getInstance();
+				calEnd.setTime(new Date()); 
+				calEnd.add(java.util.Calendar.YEAR, 1);
+		        DateTime start = new DateTime(minDate);
+				DateTime end = new DateTime(calEnd.getTime());
 				for (CalendarComponent event : events) {
-					if (minDate.before(((VEvent) event).getStartDate().getDate())) {
-						EventDTO a = new EventDTO();
-						a.setStartDate(((VEvent) event).getStartDate().getDate());
-						a.setEndDate(((VEvent) event).getEndDate().getDate());
-						if (((VEvent) event).getSummary() != null)
-							a.setDescription(((VEvent) event).getSummary().getValue());
-						
-						// Si intersection ajoute l'ID du choice comme ID selected
-						//https://stackoverflow.com/questions/325933/determine-whether-two-date-ranges-overlap
-						for (Choice choice : choices) {
-							if (Utils.intersect(choice.getstartDate(), choice.getendDate(),((VEvent) event).getStartDate().getDate() , ((VEvent) event).getEndDate().getDate())) {
-								if (!selectedChoices.contains(choice.getId())) {
-									selectedChoices.add(choice.getId());
+
+					Period period = new Period(start, end);
+					PeriodList list = event.calculateRecurrenceSet(period);
+					for (Period p1 : list) {
+						if (minDate.before(p1.getStart())) {
+							EventDTO a = new EventDTO();
+							a.setStartDate(p1.getStart());
+							a.setEndDate(p1.getEnd());
+							if (((VEvent) event).getSummary() != null)
+								a.setDescription(((VEvent) event).getSummary().getValue());
+
+							// Si intersection ajoute l'ID du choice comme ID selected
+							// https://stackoverflow.com/questions/325933/determine-whether-two-date-ranges-overlap
+							for (Choice choice : choices) {
+								if (Utils.intersect(choice.getstartDate(), choice.getendDate(), p1.getStart(),
+										p1.getEnd())) {
+									if (!selectedChoices.contains(choice.getId())) {
+										selectedChoices.add(choice.getId());
+									}
 								}
 							}
-							
+							appointments.add(a);
 						}
-						
-						appointments.add(a);
+
 					}
 				}
 			}
@@ -133,6 +145,5 @@ public class ICSResources {
 
 		return result;
 	}
-
 
 }
