@@ -136,9 +136,11 @@ public class PollResourceEx {
 		if (u == null) {
 			u = new User();
 			u.setUsername(userChoice.getUsername());
+			u.setIcsurl(userChoice.getIcs());
 			u.setMail(userChoice.getMail());
 			this.userRep.persist(u);
 		}
+		
 
 		if (userChoice.getPref() != null && !"".equals(userChoice.getPref())) {
 			MealPreference mp = new MealPreference();

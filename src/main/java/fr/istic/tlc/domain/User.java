@@ -22,6 +22,7 @@ public class User {
 
     private String username;
     private String mail;
+    private String icsurl;
 
 
 	@JsonIgnore
@@ -51,7 +52,15 @@ public class User {
 	}
 
 
-    public void removeChoice(Choice choice){
+    public String getIcsurl() {
+		return icsurl;
+	}
+
+	public void setIcsurl(String icsurl) {
+		this.icsurl = icsurl;
+	}
+
+	public void removeChoice(Choice choice){
         this.userChoices.remove(choice);
     }
 
