@@ -76,12 +76,13 @@ public class PollResourceEx {
 
 	}
 
-	@Path("/update")
 	@PUT
+	@Path("/update1")
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Transactional
 	@Produces(MediaType.APPLICATION_JSON)
 	public Poll updatePoll(Poll p) {
+		System.err.println( "p " + p);
 		Poll p1 = pollRep.findById(p.getId());
 		List<Choice> choicesToRemove = new ArrayList<Choice>();
 		for (Choice c : p1.getPollChoices()) {

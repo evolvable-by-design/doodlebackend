@@ -22,6 +22,3 @@ quarkus:
 #    username: ""
 #    password: ""
 #    mock: false
-quarkus:
-  native:
-    additional-build-args: -H:ReflectionConfigurationFiles=reflection-config.json

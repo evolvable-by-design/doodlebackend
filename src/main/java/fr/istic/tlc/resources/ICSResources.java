@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -26,7 +27,6 @@ import fr.istic.tlc.dao.PollRepository;
 import fr.istic.tlc.dao.UserRepository;
 import fr.istic.tlc.domain.Choice;
 import fr.istic.tlc.domain.Poll;
-import fr.istic.tlc.domain.User;
 import fr.istic.tlc.dto.EventDTO;
 import fr.istic.tlc.dto.EventDTOAndSelectedChoice;
 import fr.istic.tlc.services.Utils;
@@ -52,10 +52,10 @@ public class ICSResources {
 	ChoiceRepository choiceRep;
 
 	@GET
-	@Path("polls/{slug}/{email}")
+	@Path("polls/{slug}/{ics}")
 	@javax.ws.rs.Produces(MediaType.APPLICATION_JSON)
 	public EventDTOAndSelectedChoice parseCalendartoAppointments(@PathParam("slug") String slug,
-			@PathParam("email") String userid)
+			@PathParam("ics") String ics)
 			throws IOException, ParserException, InterruptedException, ExecutionException, MessagingException {
 		EventDTOAndSelectedChoice result = new EventDTOAndSelectedChoice();
 		List<EventDTO> appointments = new ArrayList<>();
@@ -73,17 +73,21 @@ public class ICSResources {
 				minDate = p.getPollChoices().get(0).getstartDate();
 
 			// Get user to get its ICS
-			User u = this.userRep.find("mail").firstResult();
-			if (u != null && u.getIcsurl() != null && !"".equals(u.getIcsurl())) {
+			//User u = this.userRep.find("mail", usermail).firstResult();
+			byte[] decodedBytes = Base64.getDecoder().decode(ics);
+			String decodedString = new String(decodedBytes);
+			
+			
+			if (decodedString != null && !"".equals(decodedString)) {
 				// String s =
 				// "http://zimbra.inria.fr/home/olivier.barais@irisa.fr/Calendar.ics";
 
 				// Query the ics url
-				String s = u.getIcsurl();
+				
 				System.setProperty("net.fortuna.ical4j.timezone.cache.impl", MapTimeZoneCache.class.getName());
 				CloseableHttpAsyncClient client = HttpAsyncClients.createDefault();
 				client.start();
-				HttpGet request = new HttpGet(s);
+				HttpGet request = new HttpGet(decodedString);
 
 				Future<HttpResponse> future = client.execute(request, null);
 				HttpResponse response = future.get();
