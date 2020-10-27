@@ -1,184 +1,171 @@
 package fr.istic.tlc.resources;
 
-import java.util.ArrayList;
+import static fr.istic.tlc.services.Utils.generateSlug;
+
 import java.util.List;
 
-import javax.inject.Inject;
-import javax.transaction.Transactional;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
+import javax.validation.Valid;
 
-import fr.istic.tlc.dao.ChoiceRepository;
-import fr.istic.tlc.dao.CommentRepository;
-import fr.istic.tlc.dao.MealPreferenceRepository;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import fr.istic.tlc.dao.PollRepository;
-import fr.istic.tlc.dao.UserRepository;
-import fr.istic.tlc.domain.Choice;
-import fr.istic.tlc.domain.Comment;
-import fr.istic.tlc.domain.MealPreference;
 import fr.istic.tlc.domain.Poll;
-import fr.istic.tlc.domain.User;
-import fr.istic.tlc.dto.ChoiceUser;
+import io.quarkus.panache.common.Sort;
+import net.gjerull.etherpad.client.EPLiteClient;
 
-@Path("/api/poll")
+@RestController
+@RequestMapping("/api")
 public class PollResourceEx {
 
-	@Inject
-	PollRepository pollRep;
+	@Autowired
+	PollRepository pollRepository;
 
-	@Inject
-	UserRepository userRep;
+	@ConfigProperty(name = "doodle.usepad")
+	boolean usePad = false;
+	@ConfigProperty(name = "doodle.padUrl")
+	String padUrl = "http://etherpad:9001/";
+	@ConfigProperty(name = "doodle.padApiKey")
+	final String apikey = "fa8cce291d03acaf1dce7d137f73ce60aa2eeebdec77be42bcb8461d0e4278ea";
+	private EPLiteClient client;
 
-	@Inject
-	ChoiceRepository choiceRep;
-
-	@Inject
-	MealPreferenceRepository mealprefRep;
-
-	@Inject
-	CommentRepository commentRep;
-
-	@Path("/slug/{slug}")
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public Poll getPollBySlug(@PathParam("slug") String slug) {
-		Poll p = pollRep.findBySlug(slug);
-		if (p != null)
-			p.getPollComments().clear();
-//		p.getPollChoices().forEach(c -> c.getUsers().clear());
-		return p;
+	@GetMapping("/polls")
+	public ResponseEntity<List<Poll>> retrieveAllpolls() {
+		// On récupère la liste de tous les poll qu'on trie ensuite par titre
+		List<Poll> polls = pollRepository.findAll(Sort.by("title", Sort.Direction.Ascending)).list();
+		return new ResponseEntity<>(polls, HttpStatus.OK);
 	}
 
-	@Path("/aslug/{aslug}")
-	@GET
-	@Produces(MediaType.APPLICATION_JSON)
-	public Poll getPollByASlug(@PathParam("aslug") String aslug) {
-		return pollRep.findByAdminSlug(aslug);
-	}
-
-	@Path("/comment/{slug}")
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Transactional
-	@Produces(MediaType.APPLICATION_JSON)
-	public Comment createComment4Poll(@PathParam("slug") String slug, Comment c) {
-		this.commentRep.persist(c);
-		Poll p = pollRep.findBySlug(slug);
-		p.addComment(c);
-		this.pollRep.persistAndFlush(p);
-		return c;
-
-	}
-
-	@PUT
-	@Path("/update1")
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Transactional
-	@Produces(MediaType.APPLICATION_JSON)
-	public Poll updatePoll(Poll p) {
-		System.err.println( "p " + p);
-		Poll p1 = pollRep.findById(p.getId());
-		List<Choice> choicesToRemove = new ArrayList<Choice>();
-		for (Choice c : p1.getPollChoices()) {
-			if (!p.getPollChoices().contains(c)) {
-
-				choicesToRemove.add(c);
-				System.err.println("toremove " + c.getId());
-			}
-
-		}
-		for (Choice c : p.getPollChoices()) {
-			if (c.getId() != null) {
-				this.choiceRep.getEntityManager().merge(c);
-				System.err.println(c.getstartDate().toLocaleString());
-				System.err.println(c.getendDate().toLocaleString());
-			} else {
-				this.choiceRep.getEntityManager().persist(c);
-			}
-			/*
-			 * else { this.choiceRep.getEntityManager().merge(c); }
-			 */
-		}
-		for (Choice c : choicesToRemove) {
-			if (c.equals(p1.getSelectedChoice())) {
-				p.setSelectedChoice(null);
-				p1.setSelectedChoice(null);
-				p.setClos(false);
-			}
-			for (User u : c.getUsers()) {
-				u.getUserChoices().remove(c);
-			}
-			c.getUsers().clear();
-			this.choiceRep.delete(c);
-
-		}
-
-		for (Choice c : p.getPollChoices()) {
-			System.err.println("tomerge " + c.getId());
-		}
-
-		Poll p2 = this.pollRep.getEntityManager().merge(p);
-		return p2;
-
-	}
-
-	@Path("/choiceuser")
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Transactional
-	public User addChoiceUser(ChoiceUser userChoice) {
-		User u = this.userRep.find("mail", userChoice.getMail()).firstResult();
-		if (u == null) {
-			u = new User();
-			u.setUsername(userChoice.getUsername());
-			u.setIcsurl(userChoice.getIcs());
-			u.setMail(userChoice.getMail());
-			this.userRep.persist(u);
-		}
-		
-
-		if (userChoice.getPref() != null && !"".equals(userChoice.getPref())) {
-			MealPreference mp = new MealPreference();
-			mp.setContent(userChoice.getPref());
-			mp.setUser(u);
-			this.mealprefRep.persist(mp);
-		}
-		for (Long choiceId : userChoice.getChoices()) {
-			Choice c = this.choiceRep.findById(choiceId);
-			c.addUser(u);
-			this.choiceRep.persistAndFlush(c);
-		}
-		return u;
-	}
-
-	@Path("/selectedchoice/{choiceid}")
-	@POST
-	@Consumes(MediaType.APPLICATION_JSON)
-	@Transactional
-	public void closePoll(@PathParam("choiceid") String choiceid) {
-		Choice c = choiceRep.findById(Long.parseLong(choiceid));
-		Poll p = this.pollRep.find("select p from Poll as p join p.pollChoices as c where c.id= ?1", c.getId())
-				.firstResult();
-		p.setClos(true);
-		p.setSelectedChoice(c);
-		this.pollRep.persist(p);
-		// TODO Send Email
-
-	}
-
-	@GET()
-	@Path("polls/{slug}/comments")
-	@Produces(MediaType.APPLICATION_JSON)
-	public List<Comment> getAllCommentsFromPoll(@PathParam("slug") String slug) {
+	@GetMapping("/polls/{slug}")
+	public ResponseEntity<Poll> retrievePoll(@PathVariable String slug, @RequestParam(required = false) String token) {
 		// On vérifie que le poll existe
-		Poll p = this.pollRep.findBySlug(slug);
-		return p.getPollComments();
+		Poll poll = pollRepository.findBySlug(slug);
+		if (poll == null) {
+			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		}
+		// Si un token est donné, on vérifie qu'il soit bon
+		if (token != null && !poll.getSlugAdmin().equals(token)) {
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		}
+		return new ResponseEntity<>(poll, HttpStatus.OK);
 	}
 
+	@GetMapping("/polls/{slug}/pad")
+	public ResponseEntity<String> retrievePadURL(@PathVariable("slug") String slug) {
+		// On vérifie que le poll existe
+		Poll poll = pollRepository.findBySlug(slug);
+		if (poll == null) {
+			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		}
+		return new ResponseEntity<>(poll.getPadURL(), HttpStatus.OK);
+	}
+
+	@DeleteMapping("/polls/{slug}")
+	public ResponseEntity<Poll> deletePoll(@PathVariable("slug") String slug, @RequestParam String token) {
+		// On vérifie que le poll existe
+		Poll poll = pollRepository.findBySlug(slug);
+		if (poll == null) {
+			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		}
+		// On vérifie que le token soit bon
+		if (!poll.getSlugAdmin().equals(token)) {
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		}
+		// On supprime tous les choix du poll
+		// Fait automatiquement par le cascade type ALL
+
+		// On supprime tous les commentaires du poll
+		// Fait automatiquement par le cascade type ALL
+
+		// On supprime le pad
+		if (client == null) {
+			client = new EPLiteClient(padUrl, apikey);
+		}
+
+		client.deletePad(getPadId(poll));
+		// On supprime le poll de la bdd
+		pollRepository.deleteById(poll.getId());
+		return new ResponseEntity<>(poll, HttpStatus.OK);
+	}
+
+	@PostMapping("/polls")
+	public ResponseEntity<Poll> createPoll(@Valid @RequestBody Poll poll) {
+		// On enregistre le poll dans la bdd
+		String padId = generateSlug(6);
+		if (usePad) {
+			if (client == null) {
+				client = new EPLiteClient(padUrl, apikey);
+			}
+			client.createPad(padId);
+			initPad(poll.getTitle(), poll.getLocation(), poll.getDescription(), client, padId);
+			poll.setPadURL(padUrl + "p/" + padId);
+		}
+		pollRepository.persist(poll);
+		return new ResponseEntity<>(poll, HttpStatus.CREATED);
+	}
+
+	@PutMapping("/polls/{slug}")
+	public ResponseEntity<Object> updatePoll(@Valid @RequestBody Poll poll, @PathVariable String slug,
+			@RequestParam String token) {
+		// On vérifie que le poll existe
+		Poll optionalPoll = pollRepository.findBySlug(slug);
+		if (optionalPoll == null)
+			return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+		// On vérifie que le token soit bon
+		if (!optionalPoll.getSlugAdmin().equals(token)) {
+			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
+		}
+		// On met au poll le bon id et les bons slugs
+		Poll ancientPoll = optionalPoll;
+		// On se connecte au pad
+		String padId = getPadId(ancientPoll);
+
+		// On sauvegarde les anciennes données pour mettre à jour le pad
+		String title = ancientPoll.getTitle();
+		String location = ancientPoll.getLocation();
+		String description = ancientPoll.getDescription();
+
+		// On met à jour l'ancien poll
+		if (poll.getTitle() != null) {
+			ancientPoll.setTitle(poll.getTitle());
+		}
+		if (poll.getLocation() != null) {
+			ancientPoll.setLocation(poll.getLocation());
+		}
+		if (poll.getDescription() != null) {
+			ancientPoll.setDescription(poll.getDescription());
+		}
+		ancientPoll.setHas_meal(poll.isHas_meal());
+		// On update le pad
+		String ancientPad = (String) client.getText(padId).get("text");
+		ancientPad = ancientPad.replaceFirst(title, ancientPoll.getTitle());
+		ancientPad = ancientPad.replaceFirst(location, ancientPoll.getLocation());
+		ancientPad = ancientPad.replaceFirst(description, ancientPoll.getDescription());
+		client.setText(padId, ancientPad);
+		// On enregistre le poll dans la bdd
+		Poll updatedPoll = pollRepository.getEntityManager().merge(ancientPoll);
+		return new ResponseEntity<>(updatedPoll, HttpStatus.OK);
+	}
+
+	private static void initPad(String pollTitle, String pollLocation, String pollDescription, EPLiteClient client,
+			String padId) {
+		final String str = pollTitle + '\n' + "Localisation : " + pollLocation + '\n' + "Description : "
+				+ pollDescription + '\n';
+		client.setText(padId, str);
+	}
+
+	private static String getPadId(Poll poll) {
+		return poll.getPadURL().substring(poll.getPadURL().length() - 6);
+	}
 }
