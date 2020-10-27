@@ -37,8 +37,8 @@ public class PollResourceEx {
 	@ConfigProperty(name = "doodle.padUrl")
 	String padUrl = "http://etherpad:9001/";
 	@ConfigProperty(name = "doodle.padApiKey")
-	final String apikey = "fa8cce291d03acaf1dce7d137f73ce60aa2eeebdec77be42bcb8461d0e4278ea";
-	private EPLiteClient client;
+	String apikey = "fa8cce291d03acaf1dce7d137f73ce60aa2eeebdec77be42bcb8461d0e4278ea";
+	EPLiteClient client;
 
 	@GetMapping("/polls")
 	public ResponseEntity<List<Poll>> retrieveAllpolls() {
