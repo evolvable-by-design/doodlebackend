@@ -1,7 +1,6 @@
 package fr.istic.tlc.resources.features;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.text.DateFormat;
@@ -11,22 +10,13 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
-import javax.servlet.http.HttpServletResponse;
-
-import org.flywaydb.core.internal.util.FileCopyUtils;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
+import javax.inject.Inject;
+import javax.ws.rs.GET;
+import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import fr.istic.tlc.dao.ChoiceRepository;
 import fr.istic.tlc.dao.PollRepository;
@@ -49,32 +39,34 @@ import jxl.write.WritableWorkbook;
 
 
 
-@RestController
-@RequestMapping("/api")
+@Path("/api")
 public class ExportResource {
-    @Autowired
-    private ChoiceRepository choiceRepository;
-    @Autowired
-    private PollRepository pollRepository;
-    @Autowired
-    private UserRepository userRepository;
+    @Inject
+     ChoiceRepository choiceRepository;
+    @Inject
+     PollRepository pollRepository;
+    @Inject
+     UserRepository userRepository;
 
     private static final String APPLICATION_EXCEL = "application/vnd.ms-excel";
     private static final String APPLICATION_PDF = "application/pdf";
-    private static final String EXCEL_FILE_LOCATION = "/home/excelFiles";
+    private static final String EXCEL_FILE_LOCATION = "/tmp/excelFiles";
 
 
-    @RequestMapping(value = "/polls/{slug}/results", method = RequestMethod.GET, produces = APPLICATION_EXCEL)
-    public @ResponseBody HttpEntity<byte[]> downloadResultsExcel(@PathVariable String slug) throws IOException {
+    @GET
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Path("/polls/{slug}/results")
+//    @RequestMapping(value = "/polls/{slug}/results", method = RequestMethod.GET, produces = {MediaType.APPLICATION_OCTET_STREAM_VALUE})
+    public Response downloadResultsExcel(@PathParam("slug") String slug) throws IOException {
         Poll poll = pollRepository.findBySlug(slug);
         if (poll == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return null;
         }
         String filePath = createExcelFile(poll,slug);
         return getHttpEntityToDownload(filePath,"vnd.ms-excel");
     }
 
-    @RequestMapping(value = "/polls/{slug}/print", method = RequestMethod.GET, produces = APPLICATION_PDF)
+   /* @RequestMapping(value = "/polls/{slug}/print", method = RequestMethod.GET, produces = APPLICATION_PDF)
     public @ResponseBody HttpEntity<byte[]> downloadResultsPdf(@PathVariable String slug) throws IOException {
         Poll poll = pollRepository.findBySlug(slug);
         if (poll == null) {
@@ -84,7 +76,7 @@ public class ExportResource {
         //Utils.excel2pdf();
         //convertToPdf(filePath);
         return getHttpEntityToDownload(filePath,"pdf");
-    }
+    }*/
 
     private String convertToPdf(String filePath){
         return "";
@@ -307,17 +299,13 @@ public class ExportResource {
         mainSheet.addCell(label);
     }
 
-    private HttpEntity<byte[]> getHttpEntityToDownload(String filePath,String fileType) throws IOException {
+    private Response getHttpEntityToDownload(String filePath,String fileType) throws IOException {
         File file = getFile(filePath);
-        FileInputStream  fi = new FileInputStream(file);
-        byte[] document = FileCopyUtils.copyToByteArray(fi);
 
-        HttpHeaders header = new HttpHeaders();
-        header.setContentType(new MediaType("application", fileType));
-        header.set("Content-Disposition", "inline; filename=" + file.getName());
-        header.setContentLength(document.length);
-
-        return new HttpEntity<>(document, header);
+        //header.set("Content-Disposition", "inline; filename=" + file.getName());
+        return Response.ok(((Object) file), MediaType.APPLICATION_OCTET_STREAM)
+                .header("Content-Disposition", "attachment; filename=\"" + file.getName() + "\"")
+                .build();
     }
 
     private File getFile(String filePath) throws FileNotFoundException {
@@ -328,7 +316,7 @@ public class ExportResource {
         return file;
     }
 
-    @ControllerAdvice
+/*    @ControllerAdvice
     public class GlobalExceptionHandler {
 
         @ExceptionHandler(value = FileNotFoundException.class)
@@ -342,7 +330,7 @@ public class ExportResource {
             System.out.println("handling io exception");
             response.sendError(500, ex.getMessage());
         }
-    }
+    }*/
 
 
 }
