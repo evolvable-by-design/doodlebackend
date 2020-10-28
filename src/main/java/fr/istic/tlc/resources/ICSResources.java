@@ -68,76 +68,78 @@ public class ICSResources {
 
 		// Get Poll
 		Poll p = this.pollRep.findBySlug(slug);
+		Date minDate = new Date();
 		if (p != null) {
-
 			// Get minimal date for Poll to filter ics
-			Date minDate = new Date();
+			
 			if (p.getPollChoices().size() > 0 && minDate.after(p.getPollChoices().get(0).getstartDate()))
 				minDate = p.getPollChoices().get(0).getstartDate();
+		}
 
-			// Get user to get its ICS
-			// User u = this.userRep.find("mail", usermail).firstResult();
-			byte[] decodedBytes = Base64.getDecoder().decode(ics);
-			String decodedString = new String(decodedBytes);
+		// Get user to get its ICS
+		// User u = this.userRep.find("mail", usermail).firstResult();
+		byte[] decodedBytes = Base64.getDecoder().decode(ics);
+		String decodedString = new String(decodedBytes);
 
-			if (decodedString != null && !"".equals(decodedString)) {
-				// String s =
-				// "http://zimbra.inria.fr/home/olivier.barais@irisa.fr/Calendar.ics";
+		if (decodedString != null && !"".equals(decodedString)) {
+			// String s =
+			// "http://zimbra.inria.fr/home/olivier.barais@irisa.fr/Calendar.ics";
 
-				// Query the ics url
+			// Query the ics url
 
-				System.setProperty("net.fortuna.ical4j.timezone.cache.impl", MapTimeZoneCache.class.getName());
-				CloseableHttpAsyncClient client = HttpAsyncClients.createDefault();
-				client.start();
-				HttpGet request = new HttpGet(decodedString);
+			System.setProperty("net.fortuna.ical4j.timezone.cache.impl", MapTimeZoneCache.class.getName());
+			CloseableHttpAsyncClient client = HttpAsyncClients.createDefault();
+			client.start();
+			HttpGet request = new HttpGet(decodedString);
 
-				Future<HttpResponse> future = client.execute(request, null);
-				HttpResponse response = future.get();
+			Future<HttpResponse> future = client.execute(request, null);
+			HttpResponse response = future.get();
 
-				ByteArrayOutputStream out = new ByteArrayOutputStream();
-				response.getEntity().writeTo(out);
-				String responseString = out.toString();
-				out.close();
-				client.close();
+			ByteArrayOutputStream out = new ByteArrayOutputStream();
+			response.getEntity().writeTo(out);
+			String responseString = out.toString();
+			out.close();
+			client.close();
 
-				// Parse result
-				StringReader sin = new StringReader(responseString);
-				CalendarBuilder builder = new CalendarBuilder();
-				Calendar calendar = builder.build(sin);
-				ComponentList<CalendarComponent> events = calendar.getComponents(Component.VEVENT);
-				List<Choice> choices = p.getPollChoices();
-				// Create Event to draw
-				java.util.Calendar calEnd = java.util.Calendar.getInstance();
-				calEnd.setTime(new Date()); 
-				calEnd.add(java.util.Calendar.YEAR, 1);
-		        DateTime start = new DateTime(minDate);
-				DateTime end = new DateTime(calEnd.getTime());
-				for (CalendarComponent event : events) {
+			// Parse result
+			StringReader sin = new StringReader(responseString);
+			CalendarBuilder builder = new CalendarBuilder();
+			Calendar calendar = builder.build(sin);
+			ComponentList<CalendarComponent> events = calendar.getComponents(Component.VEVENT);
+			List<Choice> choices =  new ArrayList<Choice>();
+			if (p!= null)
+				choices = p.getPollChoices();
+			// Create Event to draw
+			java.util.Calendar calEnd = java.util.Calendar.getInstance();
+			calEnd.setTime(new Date());
+			calEnd.add(java.util.Calendar.YEAR, 1);
+			DateTime start = new DateTime(minDate);
+			DateTime end = new DateTime(calEnd.getTime());
+			for (CalendarComponent event : events) {
 
-					Period period = new Period(start, end);
-					PeriodList list = event.calculateRecurrenceSet(period);
-					for (Period p1 : list) {
-						if (minDate.before(p1.getStart())) {
-							EventDTO a = new EventDTO();
-							a.setStartDate(p1.getStart());
-							a.setEndDate(p1.getEnd());
-							if (((VEvent) event).getSummary() != null)
-								a.setDescription(((VEvent) event).getSummary().getValue());
+				Period period = new Period(start, end);
+				PeriodList list = event.calculateRecurrenceSet(period);
+				for (Period p1 : list) {
+					if (minDate.before(p1.getStart())) {
+						EventDTO a = new EventDTO();
+						a.setStartDate(p1.getStart());
+						a.setEndDate(p1.getEnd());
+						if (((VEvent) event).getSummary() != null)
+							a.setDescription(((VEvent) event).getSummary().getValue());
 
-							// Si intersection ajoute l'ID du choice comme ID selected
-							// https://stackoverflow.com/questions/325933/determine-whether-two-date-ranges-overlap
-							for (Choice choice : choices) {
-								if (Utils.intersect(choice.getstartDate(), choice.getendDate(), p1.getStart(),
-										p1.getEnd())) {
-									if (!selectedChoices.contains(choice.getId())) {
-										selectedChoices.add(choice.getId());
-									}
+						// Si intersection ajoute l'ID du choice comme ID selected
+						// https://stackoverflow.com/questions/325933/determine-whether-two-date-ranges-overlap
+						for (Choice choice : choices) {
+							if (Utils.intersect(choice.getstartDate(), choice.getendDate(), p1.getStart(),
+									p1.getEnd())) {
+								if (!selectedChoices.contains(choice.getId())) {
+									selectedChoices.add(choice.getId());
 								}
 							}
-							appointments.add(a);
 						}
-
+						appointments.add(a);
 					}
+
 				}
 			}
 

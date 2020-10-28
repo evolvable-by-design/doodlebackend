@@ -58,6 +58,7 @@ public class PollResourceEx {
 		if (token != null && !poll.getSlugAdmin().equals(token)) {
 			return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
 		}
+		poll.setSlugAdmin("");
 		return new ResponseEntity<>(poll, HttpStatus.OK);
 	}
 

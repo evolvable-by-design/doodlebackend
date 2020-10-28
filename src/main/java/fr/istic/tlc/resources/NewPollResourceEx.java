@@ -25,6 +25,7 @@ import fr.istic.tlc.domain.MealPreference;
 import fr.istic.tlc.domain.Poll;
 import fr.istic.tlc.domain.User;
 import fr.istic.tlc.dto.ChoiceUser;
+import fr.istic.tlc.services.SendEmail;
 
 @Path("/api/poll")
 public class NewPollResourceEx {
@@ -43,6 +44,9 @@ public class NewPollResourceEx {
 
 	@Inject
 	CommentRepository commentRep;
+	
+	@Inject
+	SendEmail sendmail;
 
 	@Path("/slug/{slug}")
 	@GET
@@ -51,7 +55,7 @@ public class NewPollResourceEx {
 		Poll p = pollRep.findBySlug(slug);
 		if (p != null)
 			p.getPollComments().clear();
-//		p.getPollChoices().forEach(c -> c.getUsers().clear());
+		p.setSlugAdmin("");
 		return p;
 	}
 
@@ -96,14 +100,10 @@ public class NewPollResourceEx {
 		for (Choice c : p.getPollChoices()) {
 			if (c.getId() != null) {
 				this.choiceRep.getEntityManager().merge(c);
-				System.err.println(c.getstartDate().toLocaleString());
-				System.err.println(c.getendDate().toLocaleString());
 			} else {
 				this.choiceRep.getEntityManager().persist(c);
 			}
-			/*
-			 * else { this.choiceRep.getEntityManager().merge(c); }
-			 */
+
 		}
 		for (Choice c : choicesToRemove) {
 			if (c.equals(p1.getSelectedChoice())) {
@@ -168,6 +168,7 @@ public class NewPollResourceEx {
 		p.setClos(true);
 		p.setSelectedChoice(c);
 		this.pollRep.persist(p);
+		this.sendmail.sendASimpleEmail(p);
 		// TODO Send Email
 
 	}
@@ -176,9 +177,10 @@ public class NewPollResourceEx {
 	@Path("polls/{slug}/comments")
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<Comment> getAllCommentsFromPoll(@PathParam("slug") String slug) {
-		// On vérifie que le poll existe
 		Poll p = this.pollRep.findBySlug(slug);
-		return p.getPollComments();
+		if (p!= null)
+			return p.getPollComments();
+		return null;
 	}
 
 }
