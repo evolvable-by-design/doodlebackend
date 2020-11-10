@@ -1,0 +1,514 @@
+openapi: 3.0.3
+info:
+  title: Doodle
+  version: "2.0.0"
+
+tags:
+  - name: Polls
+  - name: Comments
+  - name: Votes
+paths:
+  /api/poll/aslug/{aslug}:
+    get:
+      operationId: getPollByAslug
+      x-@id:
+        - evolvable:getPoll
+        - evolvable:getPollByAdminSlug
+        - evolvable:getPollWithAdminSlug
+      tags:
+        - Polls
+      parameters:
+        - name: aslug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Poll'
+          links:
+            update:
+              operationId: updatePoll
+              x-@relation: evolvable:rel/update
+              x-affiliation: parent
+              parameters:
+                clos: response.body#/clos
+                description: response.body#/description
+                has_meal: response.body#/has_meal
+                location: response.body#/location
+                pollChoices: response.body#/pollChoices
+                pollComments: response.body#/pollComments
+                selectedChoice: response.body#/selectedChoice
+                slug: response.body#/slug
+                title: response.body#/title
+                id: response.body#/id
+            comment:
+              operationId: commentPoll
+              x-@relation: evolvable:rel/comment
+              x-affiliation: parent
+            vote:
+              operationId: voteOnPoll
+              x-@relation: evolvable:rel/vote
+              x-affiliation: parent
+            listComments:
+              operationId: listPollComments
+              x-@relation: evolvable:rel/listComments
+              x-affiliation: parent
+              parameters:
+                slug: response.body#/slug
+  /api/poll/slug/{slug}:
+    get:
+      operationId: getPollBySlug
+      x-@id:
+        - evolvable:getPoll
+        - evolvable:getPollBySlug
+        - evolvable:getPollWithoutAdminSlug
+      tags:
+        - Polls
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PollWithoutAdminSlug'
+          links:
+            update:
+              operationId: updatePoll
+              x-@relation: evolvable:rel/update
+              x-affiliation: parent
+              parameters:
+                clos: response.body#/clos
+                description: response.body#/description
+                has_meal: response.body#/has_meal
+                location: response.body#/location
+                pollChoices: response.body#/pollChoices
+                pollComments: response.body#/pollComments
+                selectedChoice: response.body#/selectedChoice
+                slug: response.body#/slug
+                title: response.body#/title
+                id: response.body#/id
+            comment:
+              operationId: commentPoll
+              x-@relation: evolvable:rel/comment
+              x-affiliation: parent
+            vote:
+              operationId: voteOnPoll
+              x-@relation: evolvable:rel/vote
+              x-affiliation: parent
+            listComments:
+              operationId: listPollComments
+              x-@relation: evolvable:comments
+              x-affiliation: parent
+              parameters:
+                slug: response.body#/slug
+  /api/poll/choiceuser:
+    post:
+      operationId: voteOnPoll
+      x-@id: evolvable:voteOnPoll
+      tags:
+        - Votes
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChoiceUser'
+      responses:
+        "200":
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/User'
+  /api/poll/comment/{slug}:
+    post:
+      operationId: commentPoll
+      x-@id: evolvable:commentPoll
+      tags:
+        - Comments
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CommentRequest'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Comment'
+  /api/poll/polls/{slug}/comments:
+    get:
+      operationId: listPollComments
+      x-@id: evolvable:listPollComments
+      tags:
+        - Comments
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListComment'
+  /api/poll/update1:
+    put:
+      operationId: updatePoll
+      x-@id: evolvable:updatePoll
+      tags:
+        - Polls
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PollUpdateRequest'
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Poll'
+          links:
+            update:
+              operationId: updatePoll
+              x-@relation: evolvable:rel/update
+              x-affiliation: parent
+              parameters:
+                clos: response.body#/clos
+                description: response.body#/description
+                has_meal: response.body#/has_meal
+                location: response.body#/location
+                pollChoices: response.body#/pollChoices
+                pollComments: response.body#/pollComments
+                selectedChoice: response.body#/selectedChoice
+                slug: response.body#/slug
+                title: response.body#/title
+                id: response.body#/id
+            comment:
+              operationId: commentPoll
+              x-@relation: evolvable:rel/comment
+              x-affiliation: parent
+            vote:
+              operationId: voteOnPoll
+              x-@relation: evolvable:rel/vote
+              x-affiliation: parent
+            listComments:
+              operationId: listPollComments
+              x-@relation: evolvable:comments
+              x-affiliation: parent
+              parameters:
+                slug: response.body#/slug
+  /api/polls:
+    post:
+      operationId: createPoll
+      x-@id: evolvable:createPoll
+      tags:
+        - Polls
+      requestBody:
+        content:
+          'application/json':
+            schema:
+              $ref: '#/components/schemas/PollCreationRequest'
+      responses:
+        "200":
+          description: OK
+          content:
+            'application/json':
+              schema:
+                $ref: '#/components/schemas/Poll'
+          links:
+            update:
+              operationId: updatePoll
+              x-@relation: evolvable:rel/update
+              x-affiliation: parent
+              parameters:
+                clos: response.body#/clos
+                description: response.body#/description
+                has_meal: response.body#/has_meal
+                location: response.body#/location
+                pollChoices: response.body#/pollChoices
+                pollComments: response.body#/pollComments
+                selectedChoice: response.body#/selectedChoice
+                slug: response.body#/slug
+                title: response.body#/title
+                id: response.body#/id
+            comment:
+              operationId: commentPoll
+              x-@relation: evolvable:rel/comment
+              x-affiliation: parent
+            vote:
+              operationId: voteOnPoll
+              x-@relation: evolvable:rel/vote
+              x-affiliation: parent
+            listComments:
+              operationId: listPollComments
+              x-@relation: evolvable:comments
+              x-affiliation: parent
+              parameters:
+                slug: response.body#/slug
+components:
+  schemas:
+    User:
+      x-@id: evolvable:User
+      type: object
+      properties:
+        icsurl:
+          type: string
+          format: url
+        id:
+          format: int64
+          type: integer
+        mail:
+          type: string
+          format: email
+        username:
+          type: string
+    ListUser:
+      x-@id: evolvable:ListUser
+      type: array
+      items:
+        $ref: '#/components/schemas/User'
+    Choice:
+      type: object
+      x-@id: evolvable:Choice
+      properties:
+        id:
+          format: int64
+          type: integer
+        endDate:
+          $ref: '#/components/schemas/DateTime'
+        startDate:
+          $ref: '#/components/schemas/DateTime'
+        users:
+          $ref: '#/components/schemas/ListUser'
+    ListChoice:
+      type: array
+      x-@id: evolvable:ListChoice
+      items:
+        $ref: '#/components/schemas/Choice'
+    DateTime:
+      x-@id: schema:DateTime
+      format: datetime
+      type: string
+    ListLong:
+      type: array
+      items:
+        type: number
+        format: int64
+    Comment:
+      x-@id: evolvable:Comment
+      allOf:
+        - $ref: '#/components/schemas/CommentRequest'
+        - $ref: '#/components/schemas/WithId'
+    CommentRequest:
+      x-@id: evolvable:CommentRequest
+      type: object
+      required:
+        - auteur
+        - content
+      properties:
+        auteur:
+          type: string
+        content:
+          type: string
+    WithId:
+      type: object
+      required:
+        - id
+      properties:
+        id:
+          format: int64
+          type: integer
+    ListComment:
+      x-@id: evolvable:ListComment
+      type: array
+      items:
+        $ref: '#/components/schemas/Comment'
+    Poll:
+      type: object
+      x-@id: evolvable:Poll
+      allOf:
+        - $ref: '#/components/schemas/PollWithoutAdminSlug'
+        - $ref: '#/components/schemas/AdminSlug'
+    AdminSlug:
+      type: object
+      properties:
+        slugAdmin:
+          type: string
+    PollWithoutAdminSlug:
+      type: object
+      required:
+        - clos
+        - createdAt
+        - has_meal
+        - id
+        - location
+        - padURL
+        - pollChoices
+        - pollComments
+        - selectedChoice
+        - slug
+        - title
+        - tlkURL
+        - updatedAt
+      properties:
+        clos:
+          type: boolean
+        createdAt:
+          $ref: '#/components/schemas/DateTime'
+        description:
+          type: string
+        has_meal:
+          type: boolean
+        id:
+          format: int64
+          type: integer
+        location:
+          type: string
+        padURL:
+          type: string
+        pollChoices:
+          $ref: '#/components/schemas/ListChoice'
+        pollComments:
+          $ref: '#/components/schemas/ListComment'
+        selectedChoice:
+          $ref: '#/components/schemas/Choice'
+        slug:
+          type: string
+        title:
+          type: string
+        tlkURL:
+          type: string
+        updatedAt:
+          $ref: '#/components/schemas/DateTime'
+    PollUpdateRequest:
+      type: object
+      required:
+        - clos
+        - has_meal
+        - id
+        - location
+        - pollChoices
+        - pollComments
+        - selectedChoice
+        - slug
+        - title
+      properties:
+        clos:
+          type: boolean
+        description:
+          type: string
+        has_meal:
+          type: boolean
+        id:
+          format: int64
+          type: integer
+        location:
+          type: string
+        pollChoices:
+          $ref: '#/components/schemas/ListChoice'
+        pollComments:
+          $ref: '#/components/schemas/ListComment'
+        selectedChoice:
+          $ref: '#/components/schemas/Choice'
+        slug:
+          type: string
+        title:
+          type: string
+    PollCreationRequest:
+      type: object
+      required:
+        - has_meal
+        - location
+        - pollChoices
+        - title
+      properties:
+        description:
+          type: string
+        has_meal:
+          type: boolean
+        location:
+          type: string
+        pollChoices:
+          $ref: '#/components/schemas/ListChoice'
+        title:
+          type: string
+    ChoiceUser:
+      type: object
+      required:
+        - choices
+        - username
+      properties:
+        choices:
+          $ref: '#/components/schemas/ListLong'
+        ics:
+          type: string
+        mail:
+          type: string
+        username:
+          type: string
+
+# json-LD context
+x-@context:
+  x-@context: '@context'
+  x-@id: '@id'
+  x-@type: '@type'
+  x-@relation: 'dce:relation'
+  schema: 'http://schema.org/'
+  evolvable: 'https://github.com/evolvable-by-design/use-cases/simba/vocab#'
+  id:
+    x-@id: evolvable:id
+    x-@type: evolvable:Id
+  slug: evolvable:slug
+  aslug: evolvable:adminSlug
+  adminSlug: evolvable:adminSlug
+  slugAdmin: evolvable:adminSlug
+  title: evolvable:title
+  description: schema:description
+  createdAt: schema:dateCreated
+  updatedAt: schema:dateModified
+  mail: evolvable:email
+  ics: evolvable:ics
+  icsurl: evolvable:icsurl
+  username: evolvable:username
+  location: evolvable:pollLocation
+  has_meal: evolvable:has_meal
+  endDate:
+    x-@id: schema:endDate
+    x-@type: schema:DateTime
+  startDate:
+    x-@id: schema:startDate
+    x-@type: schema:DateTime
+  users: evolvable:users
+  auteur: schema:author
+  content: evolvable:content
+  clos: evolvable:closed
+  padURL: evolvable:padURL
+  pollChoices: evolvable:pollChoices
+  pollComments: evolvable:pollComments
+  selectedChoice: evolvable:selectedChoice
+  tlkURL: evolvable:tlkURL
+  choices: evolvable:pollChoices

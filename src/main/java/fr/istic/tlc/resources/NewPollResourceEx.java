@@ -25,7 +25,10 @@ import fr.istic.tlc.domain.MealPreference;
 import fr.istic.tlc.domain.Poll;
 import fr.istic.tlc.domain.User;
 import fr.istic.tlc.dto.ChoiceUser;
+import fr.istic.tlc.evolvablebydesign.HypermediaRepresentation;
 import fr.istic.tlc.services.SendEmail;
+
+import static fr.istic.tlc.evolvablebydesign.Links.withLinks;
 
 @Path("/api/poll")
 public class NewPollResourceEx {
@@ -51,19 +54,19 @@ public class NewPollResourceEx {
 	@Path("/slug/{slug}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public Poll getPollBySlug(@PathParam("slug") String slug) {
+	public HypermediaRepresentation<Poll> getPollBySlug(@PathParam("slug") String slug) {
 		Poll p = pollRep.findBySlug(slug);
 		if (p != null)
 			p.getPollComments().clear();
 		p.setSlugAdmin("");
-		return p;
+		return withLinks(p);
 	}
 
 	@Path("/aslug/{aslug}")
 	@GET
 	@Produces(MediaType.APPLICATION_JSON)
-	public Poll getPollByASlug(@PathParam("aslug") String aslug) {
-		return pollRep.findByAdminSlug(aslug);
+	public HypermediaRepresentation<Poll> getPollByASlug(@PathParam("aslug") String aslug) {
+		return withLinks(pollRep.findByAdminSlug(aslug));
 	}
 
 	@Path("/comment/{slug}")
@@ -85,7 +88,7 @@ public class NewPollResourceEx {
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Transactional
 	@Produces(MediaType.APPLICATION_JSON)
-	public Poll updatePoll(Poll p) {
+	public HypermediaRepresentation<Poll> updatePoll(Poll p) {
 		System.err.println( "p " + p);
 		Poll p1 = pollRep.findById(p.getId());
 		List<Choice> choicesToRemove = new ArrayList<Choice>();
@@ -124,7 +127,7 @@ public class NewPollResourceEx {
 		}
 
 		Poll p2 = this.pollRep.getEntityManager().merge(p);
-		return p2;
+		return withLinks(p2);
 
 	}
 

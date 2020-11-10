@@ -25,3 +25,5 @@ quarkus:
 #    username: ""
 #    password: ""
     mock: false
+  http:
+    cors: true

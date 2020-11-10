@@ -1,11 +1,13 @@
 package fr.istic.tlc.resources;
 
+import static fr.istic.tlc.evolvablebydesign.Links.withLinks;
 import static fr.istic.tlc.services.Utils.generateSlug;
 
 import java.util.List;
 
 import javax.validation.Valid;
 
+import fr.istic.tlc.evolvablebydesign.HypermediaRepresentation;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -101,7 +103,7 @@ public class PollResourceEx {
 	}
 
 	@PostMapping("/polls")
-	public ResponseEntity<Poll> createPoll(@Valid @RequestBody Poll poll) {
+	public ResponseEntity<HypermediaRepresentation<Poll>> createPoll(@Valid @RequestBody Poll poll) {
 		// On enregistre le poll dans la bdd
 		String padId = generateSlug(6);
 		if (usePad) {
@@ -113,7 +115,7 @@ public class PollResourceEx {
 			poll.setPadURL(padUrl + "p/" + padId);
 		}
 		pollRepository.persist(poll);
-		return new ResponseEntity<>(poll, HttpStatus.CREATED);
+		return new ResponseEntity<>(withLinks(poll), HttpStatus.CREATED);
 	}
 
 	@PutMapping("/polls/{slug}")
