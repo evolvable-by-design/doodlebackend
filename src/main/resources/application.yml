@@ -1,6 +1,6 @@
 doodle:
   usepad: false
-  padUrl: "http://etherpad:9001/"
+  padUrl: "http://etherpad:9002/"
   padApiKey: "fa8cce291d03acaf1dce7d137f73ce60aa2eeebdec77be42bcb8461d0e4278ea"
   organizermail: "olivier.barais@gmail.com"
   tmpfolder: "/tmp/excelFiles"
@@ -10,7 +10,7 @@ quarkus:
     username: root
     password: ""
     jdbc:
-      url: jdbc:mysql://localhost:3306/tlc?useUnicode=true&characterEncoding=utf8&useSSL=false&useLegacyDatetimeCode=false&createDatabaseIfNotExist=true&serverTimezone=Europe/Paris
+      url: jdbc:mysql://localhost:3307/tlc?useUnicode=true&characterEncoding=utf8&useSSL=false&useLegacyDatetimeCode=false&createDatabaseIfNotExist=true&serverTimezone=Europe/Paris
       driver: com.mysql.cj.jdbc.Driver
   hibernate-orm:
     database:
@@ -27,3 +27,4 @@ quarkus:
     mock: false
   http:
     cors: true
+    port: 9090
